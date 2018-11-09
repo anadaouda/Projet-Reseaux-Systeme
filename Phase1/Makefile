@@ -15,8 +15,8 @@ EXECS = common.o dsmexec dsmwrap truc
 
 default: $(EXECS)
 
-dsmexec: dsmexec.o common.o
-	$(CLINKER) $(OPTFLAGS) -o dsmexec dsmexec.o  common.o $(LIBS)
+dsmexec: dsmexec.o common.o lectureFichier.o
+	$(CLINKER) $(OPTFLAGS) -o dsmexec dsmexec.o  common.o lectureFichier.o $(LIBS)
 	mv dsmexec ./bin
 	
 dsmwrap: dsmwrap.o common.o

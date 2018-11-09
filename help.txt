@@ -1,0 +1,15 @@
+1- génération de clef  (privé, publique)
+    ssh -keygen -t dsa -> id_dsa.pub, id_dsa
+
+fichier authorize_keys : contient toutes les clefs privées avec lesquelles on peut se connecter
+cat >> id_dsa >> authorize_keys
+Il faut le faire au moins une fois sur les machines qu'on veut utiliser
+Tout ca parce que on veut pas
+
+2- c'est quoi une clef
+permet de crypter des données pour eviter de corrompre l'envoie de donnée (usurpation, interseption etc...)
+machine A genere une clef privée et une clef publique
+Elle envoie sa clef publique a B
+A veut envoyer un message : il crypte ses données avvec la clef privée
+Seule les machines possedant la clef publique de A peuvent decoder le message 
+

@@ -29,11 +29,10 @@ int main(int argc, char *argv[])
     usage();
   } else {
      pid_t pid;
-     int num_procs = nbMachines("machine_file");;
+     int num_procs = 0;
      int i;
-     char ** machines = malloc(num_procs*sizeof(char *));
-     nomMachines("machine_file", machines);
-     //printf("%s", machines[0]);
+     
+     fclose(machines);
      /* Mise en place d'un traitant pour recuperer les fils zombies*/
      /* XXX.sa_handler = sigchld_handler; */
 
