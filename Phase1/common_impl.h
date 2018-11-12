@@ -31,3 +31,5 @@ typedef struct dsm_proc dsm_proc_t;
 int creer_socket(int type, int *port_num);
 int nbMachines(char * path);
 void nomMachines(char * path, char ** text);
+int createSocket();
+int do_accept(int sock, struct sockaddr_in sock_addr);

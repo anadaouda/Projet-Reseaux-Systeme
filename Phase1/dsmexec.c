@@ -34,7 +34,9 @@ int main(int argc, char *argv[])
      printf("procs %i\n", num_procs);
      char * machines[num_procs];
      nomMachines("machine_file", machines);
-     //printf("%s", machines[0]);
+
+     int sock = createSocket();
+     printf("sock = %i\n", sock);
      /* Mise en place d'un traitant pour recuperer les fils zombies*/
      /* XXX.sa_handler = sigchld_handler; */
 
@@ -42,6 +44,8 @@ int main(int argc, char *argv[])
      /* 1- on recupere le nombre de processus a lancer */
      /* 2- on recupere les noms des machines : le nom de */
      /* la machine est un des elements d'identification */
+
+
 
      /* creation de la socket d'ecoute */
      /* + ecoute effective */
