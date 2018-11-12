@@ -22,6 +22,16 @@ void sigchld_handler(int sig)
    /* pour eviter les zombies */
 }
 
+void closeUselessFd(int stderr[][2], int stdout[][2], int i, int num_procs) {
+  for (int j = 0; j<num_procs; j++) {
+    close(stderr[j][0]);
+    close(stdout[j][0]);
+    if (j != i) {
+      close(stderr[j][1]);
+      close(stdout[j][1]);
+    }
+  }
+}
 
 int main(int argc, char *argv[])
 {
@@ -51,9 +61,14 @@ int main(int argc, char *argv[])
      /* + ecoute effective */
 
      /* creation des fils */
+     int stderr[num_procs][2];
+     int stdout[num_procs][2];
+
      for(i = 0; i < num_procs ; i++) {
 
 	/* creation du tube pour rediriger stdout */
+  pipe(stderr[i]);
+  pipe(stdout[i]);
 
 	/* creation du tube pour rediriger stderr */
 
@@ -63,15 +78,26 @@ int main(int argc, char *argv[])
 	if (pid == 0) { /* fils */
 
 	   /* redirection stdout */
+     close(STDOUT_FILENO);
+     dup(stdout[i][1]);
+     close(stdout[i][1]);
+     close(stdout[i][0]);
 
 	   /* redirection stderr */
+     close(STDERR_FILENO);
+     dup(stderr[i][1]);
+     close(stderr[i][1]);
+     close(stderr[i][0]);
 
+     closeUselessFd(stderr, stdout, i, num_procs);
 	   /* Creation du tableau d'arguments pour le ssh */
 
 	   /* jump to new prog : */
 	   /* execvp("ssh",newargv); */
 
 	} else  if(pid > 0) { /* pere */
+    close(stderr[i][1]);
+    close(stdout[i][1]);
 	   /* fermeture des extremites des tubes non utiles */
 	   num_procs_creat++;
 	}
