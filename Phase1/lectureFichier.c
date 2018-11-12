@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -43,30 +44,15 @@ void nomMachines(char * path, char ** text) {
   FILE * file = fopen(path, "r");
 
   int wordCount = 0;
-  int wordLetterCount = 0;
-  char letter;
+  char * str = malloc(20);
 
-  text[wordCount] = malloc(20*sizeof(char));
-
-  do {
-    letter = fgetc(file);
-    printf("%c", letter);
-
-    if ((letter == '\n')||(letter == ' ')) {
-      text[wordCount][wordLetterCount] = '\0';
-      // printf("%s\n", text[wordCount]);
-      // printf("%i %i\n", wordCount, wordLetterCount);
+  while(fgets(str, 20, file) != NULL) {
+      printf("%s, %i\n", str, wordCount);
+      text[wordCount] = malloc(20);
+      strcpy(text[wordCount], str);
       wordCount++;
-      wordLetterCount = 0;
-      text[wordCount] = malloc(20*sizeof(char));
-    }
-    else {
-      text[wordCount][wordLetterCount] = letter;
-      wordLetterCount++;
-    }
-  } while(!feof(file));
-  printf("%i\n",wordCount);
-  //fclose(file);
+  }
+  fclose(file);
 
   return;
 }

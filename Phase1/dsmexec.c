@@ -31,7 +31,8 @@ int main(int argc, char *argv[])
      pid_t pid;
      int num_procs = nbMachines("machine_file");;
      int i;
-     char ** machines = malloc(num_procs*sizeof(char *));
+     printf("procs %i\n", num_procs);
+     char * machines[num_procs];
      nomMachines("machine_file", machines);
      //printf("%s", machines[0]);
      /* Mise en place d'un traitant pour recuperer les fils zombies*/
