@@ -47,8 +47,11 @@ void nomMachines(char * path, char ** text) {
   char * str = malloc(20);
 
   while(fgets(str, 20, file) != NULL) {
-      printf("%s, %i\n", str, wordCount);
       text[wordCount] = malloc(20);
+      if(str[strlen(str)-1] == '\n') {
+          str[strlen(str)-1] = '\0';
+      }
+      printf("%s, %i\n", str, wordCount);
       strcpy(text[wordCount], str);
       wordCount++;
   }

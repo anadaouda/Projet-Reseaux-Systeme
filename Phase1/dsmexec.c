@@ -33,6 +33,23 @@ void closeUselessFd(int stderr[][2], int stdout[][2], int i, int num_procs) {
   }
 }
 
+void createNewArgv(char * newargv[], char * argv [], int argc) {
+    int i;
+    newargv[0] = malloc(strlen("ssh"));
+
+    strcpy(newargv[0],"ssh");
+
+    for (i=2; i<argc + 1; i++){
+        newargv[i] = malloc(strlen(argv[i-1]));
+        strcpy(newargv[i],argv[i-1]);
+    }
+}
+
+void updateNewargv(char * newargv[], char* machines[], int i) {
+    newargv[1] = malloc(strlen(machines[i]));
+    strcpy(newargv[1],machines[i]);
+}
+
 int main(int argc, char *argv[])
 {
   if (argc < 3){
@@ -64,6 +81,9 @@ int main(int argc, char *argv[])
      int stderr[num_procs][2];
      int stdout[num_procs][2];
 
+     char * newargv[argc+1];
+     createNewArgv(newargv, argv, argc);
+
      for(i = 0; i < num_procs ; i++) {
 
 	/* creation du tube pour rediriger stdout */
@@ -93,7 +113,10 @@ int main(int argc, char *argv[])
 	   /* Creation du tableau d'arguments pour le ssh */
 
 	   /* jump to new prog : */
-	   /* execvp("ssh",newargv); */
+     //createNewargv()
+     //ssh localhost truc arguments
+     updateNewargv(newargv,machines,i);
+	 execvp("ssh",newargv);
 
 	} else  if(pid > 0) { /* pere */
     close(stderr[i][1]);
