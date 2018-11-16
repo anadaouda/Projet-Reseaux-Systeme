@@ -8,6 +8,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <limits.h>
 
 /* autres includes (eventuellement) */
 

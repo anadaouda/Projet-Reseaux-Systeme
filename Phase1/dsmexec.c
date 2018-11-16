@@ -1,5 +1,5 @@
 #include "common_impl.h"
-
+#include <unistd.h>
 /* variables globales */
 
 /* un tableau gerant les infos d'identification */
@@ -36,13 +36,23 @@ void closeUselessFd(int stderr[][2], int stdout[][2], int i, int num_procs) {
 void createNewArgv(char * newargv[], char * argv [], int argc) {
     int i;
     newargv[0] = malloc(strlen("ssh"));
-
     strcpy(newargv[0],"ssh");
 
-    for (i=2; i<argc + 1; i++){
+    char * pwd = malloc(100);
+    getcwd(pwd, 100);
+
+    newargv[2] = malloc(strlen(pwd) + strlen(argv[1]) + 5);
+    sprintf(newargv[2], "%s/bin/%s", pwd,argv[1]);
+    printf("%s\n", newargv[2]);
+    fflush(stdout);
+
+    for (i=3; i<argc + 1; i++){
         newargv[i] = malloc(strlen(argv[i-1]));
         strcpy(newargv[i],argv[i-1]);
     }
+
+    newargv[argc+1] = NULL;
+    free(pwd);
 }
 
 void updateNewargv(char * newargv[], char* machines[], int i) {
@@ -63,7 +73,8 @@ int main(int argc, char *argv[])
      nomMachines("machine_file", machines);
 
      int sock = createSocket();
-     printf("sock = %i\n", sock);
+     int nbRead;
+     char * buffer = malloc(100);
      /* Mise en place d'un traitant pour recuperer les fils zombies*/
      /* XXX.sa_handler = sigchld_handler; */
 
@@ -81,7 +92,7 @@ int main(int argc, char *argv[])
      int stderr[num_procs][2];
      int stdout[num_procs][2];
 
-     char * newargv[argc+1];
+     char * newargv[argc+2];
      createNewArgv(newargv, argv, argc);
 
      for(i = 0; i < num_procs ; i++) {
@@ -113,21 +124,26 @@ int main(int argc, char *argv[])
 	   /* Creation du tableau d'arguments pour le ssh */
 
 	   /* jump to new prog : */
-     //createNewargv()
-     //ssh localhost truc arguments
+
      updateNewargv(newargv,machines,i);
-	 execvp("ssh",newargv);
+     printf("%s\n", newargv[2]);
+     execvp("ssh",newargv);
+     break;
 
 	} else  if(pid > 0) { /* pere */
     close(stderr[i][1]);
     close(stdout[i][1]);
+
+    memset(buffer, '\0', strlen(buffer));
+    nbRead = read(stdout[i][0], buffer, 100);
+    printf("%s\n", buffer);
+
 	   /* fermeture des extremites des tubes non utiles */
 	   num_procs_creat++;
-	}
-     }
+	  }
+    }
 
-
-     for(i = 0; i < num_procs ; i++){
+for(i = 0; i < num_procs ; i++){
 
 	/* on accepte les connexions des processus dsm */
 

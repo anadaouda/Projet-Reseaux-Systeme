@@ -1,8 +1,8 @@
 1- génération de clef  (privé, publique)
-    ssh -keygen -t dsa -> id_dsa.pub, id_dsa
+    ssh-keygen -t rsa -> id_dsa.pub, id_dsa
 
 fichier authorize_keys : contient toutes les clefs privées avec lesquelles on peut se connecter
-cat >> id_dsa >> authorize_keys
+cat >> id_dsa.pub >> authorized_keys
 Il faut le faire au moins une fois sur les machines qu'on veut utiliser
 Tout ca parce que on veut pas
 
