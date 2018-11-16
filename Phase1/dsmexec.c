@@ -23,7 +23,8 @@ void sigchld_handler(int sig)
 }
 
 void closeUselessFd(int stderr[][2], int stdout[][2], int i, int num_procs) {
-  for (int j = 0; j<num_procs; j++) {
+  int j;
+  for (j = 0; j<num_procs; j++) {
     close(stderr[j][0]);
     close(stdout[j][0]);
     if (j != i) {
@@ -35,9 +36,20 @@ void closeUselessFd(int stderr[][2], int stdout[][2], int i, int num_procs) {
 
 void createNewArgv(char * newargv[], char * argv [], int argc) {
     int i;
+<<<<<<< HEAD
     newargv[0] = malloc(strlen("ssh"));
-    strcpy(newargv[0],"ssh");
+=======
+    char *pwd=malloc(100);
+    getcwd(pwd,100);
 
+    newargv[0] = malloc(strlen("ssh"));
+    newargv[2] = malloc(1000);
+>>>>>>> 8b8c2d022a38808d6e9697f638074389180456df
+    strcpy(newargv[0],"ssh");
+    strcpy(newargv[2],pwd);
+    strcat(newargv[2],argv[1]);
+
+<<<<<<< HEAD
     char * pwd = malloc(100);
     getcwd(pwd, 100);
 
@@ -46,13 +58,20 @@ void createNewArgv(char * newargv[], char * argv [], int argc) {
     printf("%s\n", newargv[2]);
     fflush(stdout);
 
+=======
+>>>>>>> 8b8c2d022a38808d6e9697f638074389180456df
     for (i=3; i<argc + 1; i++){
         newargv[i] = malloc(strlen(argv[i-1]));
         strcpy(newargv[i],argv[i-1]);
     }
+<<<<<<< HEAD
 
     newargv[argc+1] = NULL;
     free(pwd);
+=======
+    // newargv[argc+1] = malloc(10);
+    newargv[argc+1]=NULL;
+>>>>>>> 8b8c2d022a38808d6e9697f638074389180456df
 }
 
 void updateNewargv(char * newargv[], char* machines[], int i) {
@@ -73,8 +92,13 @@ int main(int argc, char *argv[])
      nomMachines("machine_file", machines);
 
      int sock = createSocket();
+<<<<<<< HEAD
      int nbRead;
      char * buffer = malloc(100);
+=======
+     printf("sock = %i\n", sock);
+     char *buffer=malloc(1000);
+>>>>>>> 8b8c2d022a38808d6e9697f638074389180456df
      /* Mise en place d'un traitant pour recuperer les fils zombies*/
      /* XXX.sa_handler = sigchld_handler; */
 
@@ -96,7 +120,7 @@ int main(int argc, char *argv[])
      createNewArgv(newargv, argv, argc);
 
      for(i = 0; i < num_procs ; i++) {
-
+       memset(buffer,0,sizeof(buffer));
 	/* creation du tube pour rediriger stdout */
   pipe(stderr[i]);
   pipe(stdout[i]);
@@ -113,8 +137,8 @@ int main(int argc, char *argv[])
      dup(stdout[i][1]);
      close(stdout[i][1]);
      close(stdout[i][0]);
-
 	   /* redirection stderr */
+     
      close(STDERR_FILENO);
      dup(stderr[i][1]);
      close(stderr[i][1]);
@@ -122,22 +146,32 @@ int main(int argc, char *argv[])
 
      closeUselessFd(stderr, stdout, i, num_procs);
 	   /* Creation du tableau d'arguments pour le ssh */
-
 	   /* jump to new prog : */
+<<<<<<< HEAD
 
      updateNewargv(newargv,machines,i);
      printf("%s\n", newargv[2]);
      execvp("ssh",newargv);
      break;
+=======
+     updateNewargv(newargv,machines,i);
+>>>>>>> 8b8c2d022a38808d6e9697f638074389180456df
 
+	   execvp("ssh",newargv);
+   break;
 	} else  if(pid > 0) { /* pere */
     close(stderr[i][1]);
     close(stdout[i][1]);
+<<<<<<< HEAD
 
     memset(buffer, '\0', strlen(buffer));
     nbRead = read(stdout[i][0], buffer, 100);
     printf("%s\n", buffer);
 
+=======
+    read(stdout[i][0],buffer,1000);
+    printf("%s\n",buffer);
+>>>>>>> 8b8c2d022a38808d6e9697f638074389180456df
 	   /* fermeture des extremites des tubes non utiles */
 	   num_procs_creat++;
 	  }
