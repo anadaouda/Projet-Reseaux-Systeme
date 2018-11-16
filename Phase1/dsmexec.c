@@ -23,7 +23,8 @@ void sigchld_handler(int sig)
 }
 
 void closeUselessFd(int stderr[][2], int stdout[][2], int i, int num_procs) {
-  for (int j = 0; j<num_procs; j++) {
+  int j;
+  for (j = 0; j<num_procs; j++) {
     close(stderr[j][0]);
     close(stdout[j][0]);
     if (j != i) {
@@ -35,14 +36,21 @@ void closeUselessFd(int stderr[][2], int stdout[][2], int i, int num_procs) {
 
 void createNewArgv(char * newargv[], char * argv [], int argc) {
     int i;
+    char *pwd=malloc(100);
+    getcwd(pwd,100);
+
     newargv[0] = malloc(strlen("ssh"));
-
+    newargv[2] = malloc(1000);
     strcpy(newargv[0],"ssh");
+    strcpy(newargv[2],pwd);
+    strcat(newargv[2],argv[1]);
 
-    for (i=2; i<argc + 1; i++){
+    for (i=3; i<argc + 1; i++){
         newargv[i] = malloc(strlen(argv[i-1]));
         strcpy(newargv[i],argv[i-1]);
     }
+    // newargv[argc+1] = malloc(10);
+    newargv[argc+1]=NULL;
 }
 
 void updateNewargv(char * newargv[], char* machines[], int i) {
@@ -64,6 +72,7 @@ int main(int argc, char *argv[])
 
      int sock = createSocket();
      printf("sock = %i\n", sock);
+     char *buffer=malloc(1000);
      /* Mise en place d'un traitant pour recuperer les fils zombies*/
      /* XXX.sa_handler = sigchld_handler; */
 
@@ -81,11 +90,11 @@ int main(int argc, char *argv[])
      int stderr[num_procs][2];
      int stdout[num_procs][2];
 
-     char * newargv[argc+1];
+     char * newargv[argc+2];
      createNewArgv(newargv, argv, argc);
 
      for(i = 0; i < num_procs ; i++) {
-
+       memset(buffer,0,sizeof(buffer));
 	/* creation du tube pour rediriger stdout */
   pipe(stderr[i]);
   pipe(stdout[i]);
@@ -102,8 +111,8 @@ int main(int argc, char *argv[])
      dup(stdout[i][1]);
      close(stdout[i][1]);
      close(stdout[i][0]);
-
 	   /* redirection stderr */
+     
      close(STDERR_FILENO);
      dup(stderr[i][1]);
      close(stderr[i][1]);
@@ -111,16 +120,16 @@ int main(int argc, char *argv[])
 
      closeUselessFd(stderr, stdout, i, num_procs);
 	   /* Creation du tableau d'arguments pour le ssh */
-
 	   /* jump to new prog : */
-     //createNewargv()
-     //ssh localhost truc arguments
      updateNewargv(newargv,machines,i);
-	 execvp("ssh",newargv);
 
+	   execvp("ssh",newargv);
+   break;
 	} else  if(pid > 0) { /* pere */
     close(stderr[i][1]);
     close(stdout[i][1]);
+    read(stdout[i][0],buffer,1000);
+    printf("%s\n",buffer);
 	   /* fermeture des extremites des tubes non utiles */
 	   num_procs_creat++;
 	}
