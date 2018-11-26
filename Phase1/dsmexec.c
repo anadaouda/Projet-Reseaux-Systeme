@@ -22,14 +22,14 @@ void sigchld_handler(int sig)
    /* pour eviter les zombies */
 }
 
-void closeUselessFd(int stderr[][2], int stdout[][2], int i, int num_procs) {
+void closeUselessFd(int newStderr[][2], int newStdout[][2], int i, int num_procs) {
   int j;
   for (j = 0; j<num_procs; j++) {
-    close(stderr[j][0]);
-    close(stdout[j][0]);
+    close(newStderr[j][0]);
+    close(newStdout[j][0]);
     if (j != i) {
-      close(stderr[j][1]);
-      close(stdout[j][1]);
+      close(newStderr[j][1]);
+      close(newStdout[j][1]);
     }
   }
 }
@@ -37,27 +37,29 @@ void closeUselessFd(int stderr[][2], int stdout[][2], int i, int num_procs) {
 void createNewArgv(char * newargv[], char * argv [], int argc) {
     int i;
     newargv[0] = malloc(strlen("ssh"));
+    strcpy(newargv[0], "ssh");
 
+    newargv[1] = malloc(20);
 
     char * pwd = malloc(100);
     getcwd(pwd, 100);
 
-    newargv[2] = malloc(strlen(pwd) + strlen(argv[1]) + 5);
-    sprintf(newargv[2], "%s/bin/%s", pwd,argv[1]);
-    printf("%s\n", newargv[2]);
-    fflush(stdout);
+    newargv[2] = malloc(strlen(pwd) + strlen("dsmwrap") + 5);
+    newargv[3] = malloc(strlen(pwd) + strlen(argv[2]) + 5);
+    sprintf(newargv[2], "%s/bin/%s", pwd,"dsmwrap");
+    sprintf(newargv[3], "%s/bin/%s", pwd,argv[2]);
 
-    for (i=3; i<argc + 1; i++){
+    for (i = 4; i < argc + 1; i++){
         newargv[i] = malloc(strlen(argv[i-1]));
         strcpy(newargv[i],argv[i-1]);
     }
 
-    newargv[argc+1] = NULL;
+    newargv[argc + 1] = NULL;
     free(pwd);
 }
 
 void updateNewargv(char * newargv[], char* machines[], int i) {
-    newargv[1] = malloc(strlen(machines[i]));
+    memset(newargv[1], '\0', 20);
     strcpy(newargv[1],machines[i]);
 }
 
@@ -67,13 +69,12 @@ int main(int argc, char *argv[])
     usage();
   } else {
      pid_t pid;
-     int num_procs = nbMachines("machine_file");;
+     int num_procs = nbMachines(argv[1]);;
      int i;
      printf("procs %i\n", num_procs);
      char * machines[num_procs];
-     nomMachines("machine_file", machines);
-
-     int sock = createSocket();
+     nomMachines(argv[1], machines);
+     //int sock = createSocket();
      int nbRead;
      char * buffer = malloc(100);
      /* Mise en place d'un traitant pour recuperer les fils zombies*/
@@ -90,50 +91,50 @@ int main(int argc, char *argv[])
      /* + ecoute effective */
 
      /* creation des fils */
-     int stderr[num_procs][2];
-     int stdout[num_procs][2];
+     int newStderr[num_procs][2];
+     int newStdout[num_procs][2];
 
-     char * newargv[argc+2];
+     char * newargv[argc + 2]; // +2 parce que il y a un argument de plus et pour le NULL
      createNewArgv(newargv, argv, argc);
 
      for(i = 0; i < num_procs ; i++) {
-       memset(buffer,0,sizeof(buffer));
-	/* creation du tube pour rediriger stdout */
-  pipe(stderr[i]);
-  pipe(stdout[i]);
 
-	/* creation du tube pour rediriger stderr */
+	/* creation du tube pour rediriger newStdout */
+    pipe(newStderr[i]);
+    pipe(newStdout[i]);
+
+	/* creation du tube pour rediriger newStderr */
 
 	pid = fork();
 	if(pid == -1) ERROR_EXIT("fork");
 
 	if (pid == 0) { /* fils */
-
-	   /* redirection stdout */
+	   /* redirection newStdout */
      close(STDOUT_FILENO);
-     dup(stdout[i][1]);
-     close(stdout[i][1]);
-     close(stdout[i][0]);
-	   /* redirection stderr */
+     dup(newStdout[i][1]);
+     close(newStdout[i][1]);
+     close(newStdout[i][0]);
+	   /* redirection newStderr */
 
      close(STDERR_FILENO);
-     dup(stderr[i][1]);
-     close(stderr[i][1]);
-     close(stderr[i][0]);
+     dup(newStderr[i][1]);
+     close(newStderr[i][1]);
+     close(newStderr[i][0]);
 
-     closeUselessFd(stderr, stdout, i, num_procs);
+     closeUselessFd(newStderr, newStdout, i, num_procs);
 	   /* Creation du tableau d'arguments pour le ssh */
 	   /* jump to new prog : */
+       
      updateNewargv(newargv,machines,i);
+     execvp("ssh",newargv);
 
-	   execvp("ssh",newargv);
-   break;
+     break;
 	} else  if(pid > 0) { /* pere */
-    close(stderr[i][1]);
-    close(stdout[i][1]);
+    close(newStderr[i][1]);
+    close(newStdout[i][1]);
 
     memset(buffer, '\0', strlen(buffer));
-    nbRead = read(stdout[i][0], buffer, 100);
+    nbRead = read(newStdout[i][0], buffer, 100);
     printf("%s\n", buffer);
 
 	   /* fermeture des extremites des tubes non utiles */
@@ -162,7 +163,7 @@ for(i = 0; i < num_procs ; i++){
      /* envoi des infos de connexion aux processus */
 
      /* gestion des E/S : on recupere les caracteres */
-     /* sur les tubes de redirection de stdout/stderr */
+     /* sur les tubes de redirection de newStdout/newStderr */
      /* while(1)
          {
             je recupere les infos sur les tubes de redirection

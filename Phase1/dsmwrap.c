@@ -1,15 +1,35 @@
 #include "common_impl.h"
 
+void createNewArgv(char * newargv[], char ** argv, int argc) {
+    int i;
+
+    for (i = 0; i < argc-1; i++){
+        newargv[i] = malloc(strlen(argv[i+1]));
+        strcpy(newargv[i],argv[i+1]);
+    }
+    newargv[argc-1] = NULL;
+}
+
+
+
 int main(int argc, char **argv)
-{   
+{
+    //argv = {path_to_dsmwrap, path_to_truc, arg1, args2, arg3, NULL};
+    //argc est censé etre égal a 5;
+    int nbArgs;
+    for (nbArgs = 0; argv[nbArgs] != NULL; nbArgs++);
+
+    char * newargv[nbArgs];
+
    /* processus intermediaire pour "nettoyer" */
    /* la liste des arguments qu'on va passer */
    /* a la commande a executer vraiment */
-   
+
+   // Il faut les infos de la socket pour que ca marche
    /* creation d'une socket pour se connecter au */
    /* au lanceur et envoyer/recevoir les infos */
-   /* necessaires pour la phase dsm_init */   
-   
+   /* necessaires pour la phase dsm_init */
+
    /* Envoi du nom de machine au lanceur */
 
    /* Envoi du pid au lanceur */
@@ -22,5 +42,7 @@ int main(int argc, char **argv)
    /* processus dsm */
 
    /* on execute la bonne commande */
+   createNewArgv(newargv, argv, nbArgs);
+   execvp(newargv[0],newargv);
    return 0;
 }
