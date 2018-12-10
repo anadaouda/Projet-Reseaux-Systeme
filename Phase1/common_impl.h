@@ -11,7 +11,9 @@
 #include <limits.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <limits.h>
+#include <netdb.h>
+#include <pthread.h>
+#include <poll.h>
 
 /* autres includes (eventuellement) */
 
@@ -38,3 +40,5 @@ int nbMachines(char * path);
 void nomMachines(char * path, char ** text);
 int createSocket();
 int do_accept(int sock, struct sockaddr_in sock_addr);
+struct addrinfo ** get_addr_info(char * hostname);
+int do_connect(struct addrinfo ** res);

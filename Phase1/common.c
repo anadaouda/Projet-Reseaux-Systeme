@@ -33,10 +33,40 @@ struct sockaddr_in init_serv_addr() {
 
   memset(&sock_addr, '\0', sizeof(sock_addr));
   sock_addr.sin_family = AF_INET;
-  sock_addr.sin_port = htons(33000);
-  inet_aton("127.0.0.1", &sock_addr.sin_addr);
+  sock_addr.sin_port = htons(0);
+  sock_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
   return sock_addr;
+}
+
+struct addrinfo ** get_addr_info(char * hostname) {
+    int status;
+    struct addrinfo hints;
+    struct addrinfo ** res = malloc(sizeof(struct addrinfo *));
+    memset(&hints,0,sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype=SOCK_STREAM;
+    if ((status = getaddrinfo(hostname,NULL,&hints,res)) == -1) {
+        perror("Getaddrinfo");
+        exit(EXIT_FAILURE);
+    }
+
+    return res;
+}
+
+int do_connect(struct addrinfo ** res) {
+    struct addrinfo * p;
+    int sock = do_socket();
+    for (p = res[0]; p !=NULL; p = p->ai_next) {
+        if(connect(sock, p->ai_addr, p->ai_addrlen)!=-1) {
+            return sock;
+        }
+    }
+    //fprintf(stderr, "Connect %s\n", strerror(errno));
+    perror("Connect");
+    fflush(stderr);
+    return -1;
+    //exit(EXIT_FAILURE);
 }
 
 void do_bind(int sock, struct sockaddr_in sock_addr) {
@@ -108,7 +138,6 @@ void nomMachines(char * path, char ** text) {
       if(str[strlen(str)-1] == '\n') {
           str[strlen(str)-1] = '\0';
       }
-      printf("%s, %i\n", str, wordCount);
       strcpy(text[wordCount], str);
       wordCount++;
   }
