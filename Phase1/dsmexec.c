@@ -28,7 +28,8 @@ void * pipeRead(void * args) {
     //Initialisation poll
     struct pollfd pollStd[num_procs*2];
     memset(pollStd, '0', sizeof(struct pollfd)*(num_procs)*2);
-    for (int i = 0; i < num_procs; i++) {
+    int i;
+    for (i = 0; i < num_procs; i++) {
         pollStd[i].fd = newStdout[i][0];
         pollStd[i].events = POLLIN;
 
@@ -36,20 +37,21 @@ void * pipeRead(void * args) {
         pollStd[i+num_procs].events = POLLIN;
     }
 
-    char * buffer = malloc(100);
+    char * buffer = malloc(MAX_BUFFER_SIZE);
 
     while(1) {
-        poll(pollStd, num_procs, -1);
-        for (int j = 0; j < num_procs*2; j++) {
+        int resPoll = poll(pollStd, num_procs*2, -1);
+        int j;
+        for (j = 0; j < num_procs*2; j++) {
             if(pollStd[j].revents == POLLIN) {
-                memset(buffer, '\0', 100);
-                read(newStdout[j][0], buffer, 100);
+                memset(buffer, '\0', MAX_BUFFER_SIZE);
+                read(pollStd[j].fd, buffer, MAX_BUFFER_SIZE);
+
                 if (j >= num_procs) {
-                    printf("[Proc %i : %s : %s] %s\n", j, machines[j], "stderr", buffer);
+                    printf("[Proc %i : %s : %s] %s\n", j-num_procs, machines[j-num_procs], "stderr", buffer);
                 } else {
                     printf("[Proc %i : %s : %s] %s\n", j, machines[j], "stdout", buffer);
                 }
-
                 fflush(stdout);
             }
         }
@@ -116,7 +118,6 @@ void updateNewargv(char * newargv[], char* machines[], int i) {
 int main(int argc, char *argv[])
 {
   if (argc < 3){
-    usage();
   } else {
      pid_t pid;
      int num_procs = nbMachines(argv[1]);;
@@ -124,12 +125,10 @@ int main(int argc, char *argv[])
 
      char * machines[num_procs];
      nomMachines(argv[1], machines);
+     struct sockaddr_in sockDsmAddr;
+     int sock = createSocket(&sockDsmAddr);
 
-     int sock = createSocket();
      // faire un thread qui va s'occuper de faire les accept
-
-     int nbRead;
-     char * buffer = malloc(100);
 
      /* Mise en place d'un traitant pour recuperer les fils zombies*/
      /* XXX.sa_handler = sigchld_handler; */
@@ -153,6 +152,7 @@ int main(int argc, char *argv[])
 
      char * newargv[argc + 3]; // +2 parce que il y a un argument de plus et pour le NULL
      createNewArgv(newargv, argv, argc);
+
      for(i = 0; i < num_procs ; i++) {
 
 	/* creation du tube pour rediriger newStdout */
@@ -180,6 +180,7 @@ int main(int argc, char *argv[])
      dup(newStderr[i][1]);
      close(newStderr[i][1]);
      close(newStderr[i][0]);
+
      //closeUselessFd(newStderr, newStdout, i, num_procs);
 	   /* Creation du tableau d'arguments pour le ssh */
 	   /* jump to new prog : */
@@ -199,12 +200,16 @@ int main(int argc, char *argv[])
 pthread_t pipeRd;
 struct pipeReadArgs args = {newStderr, newStdout, machines, num_procs};
 pthread_create(&pipeRd, NULL, pipeRead, (void *)&args);
-pthread_join(pipeRd, NULL);
     //faire le poll ici parce que on sait que tout les processus sont fait.
     // {newstdout, newstderr, machines}
 
-for(i = 0; i < num_procs ; i++){
 
+
+
+dsm_proc_t * dsm_proc_id = malloc(num_procs*sizeof(dsm_proc_t));
+
+for(i = 0; i < num_procs ; i++){
+  int acceptSock = do_accept(sock, sockDsmAddr);
 	/* on accepte les connexions des processus dsm */
 
 	/*  On recupere le nom de la machine distante */
@@ -215,8 +220,28 @@ for(i = 0; i < num_procs ; i++){
 
 	/* On recupere le numero de port de la socket */
 	/* d'ecoute des processus distants */
+
+  //int comSock = do_accept();
+
+  //do_read(name);
+  //do_read(pid);
+  //do_read(port);
+
+  //int rank = get_rank(name, dsm_proc_id, machines);
+  //dsm_proc_id[i] = {pid, {rank, port}};
+
      }
 
+/*
+for (every dsm process) {
+    do_send(dsm_proc_id[i].connect_info.comSock,num_procs);
+    do_send(dsm_proc_id[i].connect_info.comSock,dsm_proc_id[i].connect_info.rank);
+    for (every dsm process except me) {
+      do_send(dsm_proc_id[i].connect_info.comSock,dsm_proc_id[j].connect_info.port);
+      do_send(dsm_proc_id[i].connect_info.comSock,dsm_proc_id[i].connect_info.rank);
+    }
+}
+*/
      /* envoi du nombre de processus aux processus dsm*/
 
      /* envoi des rangs aux processus dsm */
@@ -239,6 +264,8 @@ for(i = 0; i < num_procs ; i++){
      /* on ferme les descripteurs proprement */
 
      /* on ferme la socket d'ecoute */
+     pthread_join(pipeRd, NULL);
   }
+
    exit(EXIT_SUCCESS);
 }

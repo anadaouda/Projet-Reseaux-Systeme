@@ -28,25 +28,25 @@ int do_socket() {
   return sock;
 }
 
-struct sockaddr_in init_serv_addr() {
-  struct sockaddr_in sock_addr;
+struct sockaddr_in * init_serv_addr() {
+  struct sockaddr_in * sock_addr = malloc(sizeof(struct sockaddr_in));
 
   memset(&sock_addr, '\0', sizeof(sock_addr));
   sock_addr.sin_family = AF_INET;
-  sock_addr.sin_port = htons(0);
-  sock_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  sock_addr->sin_port = htons(0);
+  sock_addr->sin_addr.s_addr = htonl(INADDR_ANY);
 
   return sock_addr;
 }
 
-struct addrinfo ** get_addr_info(char * hostname) {
+struct addrinfo * get_addr_info(char * hostname) {
     int status;
     struct addrinfo hints;
-    struct addrinfo ** res = malloc(sizeof(struct addrinfo *));
+    struct addrinfo * res = malloc(sizeof(struct addrinfo));
     memset(&hints,0,sizeof(hints));
     hints.ai_family = AF_INET;
     hints.ai_socktype=SOCK_STREAM;
-    if ((status = getaddrinfo(hostname,NULL,&hints,res)) == -1) {
+    if ((status = getaddrinfo(hostname,NULL,&hints,&res)) == -1) {
         perror("Getaddrinfo");
         exit(EXIT_FAILURE);
     }
@@ -54,22 +54,19 @@ struct addrinfo ** get_addr_info(char * hostname) {
     return res;
 }
 
-int do_connect(struct addrinfo ** res) {
+int do_connect(struct addrinfo * res) {
     struct addrinfo * p;
     int sock = do_socket();
-    for (p = res[0]; p !=NULL; p = p->ai_next) {
+    for (p = res; p !=NULL; p = p->ai_next) {
         if(connect(sock, p->ai_addr, p->ai_addrlen)!=-1) {
             return sock;
         }
     }
-    //fprintf(stderr, "Connect %s\n", strerror(errno));
     perror("Connect");
-    fflush(stderr);
     return -1;
-    //exit(EXIT_FAILURE);
 }
 
-void do_bind(int sock, struct sockaddr_in sock_addr) {
+void do_bind(int sock, struct sockaddr_in * sock_addr) {
   if (bind(sock, (struct sockaddr *) &sock_addr, sizeof(sock_addr)) == -1) {
     perror("Bind");
     exit(EXIT_FAILURE);
@@ -93,9 +90,9 @@ int do_accept(int sock, struct sockaddr_in sock_addr) {
   return rdwr_socket;
 }
 
-int createSocket() {
+int createSocket(struct sockaddr_in * sockDsmAddr) {
     int sockDsm = do_socket();
-    struct sockaddr_in sockDsmAddr = init_serv_addr();
+    sockDsmAddr = init_serv_addr();
     do_bind(sockDsm, sockDsmAddr);
     do_listen(sockDsm);
     return sockDsm;

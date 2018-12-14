@@ -17,12 +17,17 @@
 
 /* autres includes (eventuellement) */
 
+
+#define MAX_BUFFER_SIZE 500
+
 #define ERROR_EXIT(str) {perror(str);exit(EXIT_FAILURE);}
 
 /* definition du type des infos */
 /* de connexion des processus dsm */
 struct dsm_proc_conn  {
    int rank;
+   int comSock;
+   //int port;
    /* a completer */
 };
 typedef struct dsm_proc_conn dsm_proc_conn_t;
@@ -38,7 +43,7 @@ typedef struct dsm_proc dsm_proc_t;
 int creer_socket(int type, int *port_num);
 int nbMachines(char * path);
 void nomMachines(char * path, char ** text);
-int createSocket();
+int createSocket(struct sockaddr_in * sockDsmAddr);
 int do_accept(int sock, struct sockaddr_in sock_addr);
-struct addrinfo ** get_addr_info(char * hostname);
-int do_connect(struct addrinfo ** res);
+struct addrinfo * get_addr_info(char * hostname);
+int do_connect(struct addrinfo * res);
