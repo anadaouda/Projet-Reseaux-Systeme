@@ -206,10 +206,17 @@ pthread_create(&pipeRd, NULL, pipeRead, (void *)&args);
 
 
 
-dsm_proc_t * dsm_proc_id = malloc(num_procs*sizeof(dsm_proc_t));
+//dsm_proc_t * dsm_proc_id = malloc(num_procs*sizeof(dsm_proc_t));
+printf("yolo1\n");
 
 for(i = 0; i < num_procs ; i++){
+  printf("yolo2\n");
+  printf("%s\n",inet_ntoa(sockDsmAddr.sin_addr));
+  printf("%d\n",sockDsmAddr.sin_port);
+
   int acceptSock = do_accept(sock, sockDsmAddr);
+  printf("acceptSock = %i", acceptSock);
+  fflush(stdout);
 	/* on accepte les connexions des processus dsm */
 
 	/*  On recupere le nom de la machine distante */

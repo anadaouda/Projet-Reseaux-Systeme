@@ -1,5 +1,6 @@
 #include "common_impl.h"
 
+
 int creer_socket(int prop, int *port_num)
 {
    int fd = 0;
@@ -28,15 +29,14 @@ int do_socket() {
   return sock;
 }
 
-struct sockaddr_in * init_serv_addr() {
-  struct sockaddr_in * sock_addr = malloc(sizeof(struct sockaddr_in));
+void init_serv_addr(struct sockaddr_in * sock_addr) {
+  //struct sockaddr_in * sock_addr = malloc(sizeof(struct sockaddr_in));
 
-  memset(&sock_addr, '\0', sizeof(sock_addr));
-  sock_addr.sin_family = AF_INET;
+  memset(sock_addr, '\0', sizeof(struct sockaddr_in));
+  sock_addr->sin_family = AF_INET;
   sock_addr->sin_port = htons(0);
   sock_addr->sin_addr.s_addr = htonl(INADDR_ANY);
 
-  return sock_addr;
 }
 
 struct addrinfo * get_addr_info(char * hostname) {
@@ -57,17 +57,22 @@ struct addrinfo * get_addr_info(char * hostname) {
 int do_connect(struct addrinfo * res) {
     struct addrinfo * p;
     int sock = do_socket();
+    int resSize = 0;
     for (p = res; p !=NULL; p = p->ai_next) {
+      resSize++;
+      //printf("%d\n",sockDsmAddr.sin_port);
         if(connect(sock, p->ai_addr, p->ai_addrlen)!=-1) {
             return sock;
         }
     }
+    printf("resSize = %i\n", resSize);
+    fflush(stdout);
     perror("Connect");
     return -1;
 }
 
 void do_bind(int sock, struct sockaddr_in * sock_addr) {
-  if (bind(sock, (struct sockaddr *) &sock_addr, sizeof(sock_addr)) == -1) {
+  if (bind(sock, (struct sockaddr *) sock_addr, sizeof(struct sockaddr_in)) == -1) {
     perror("Bind");
     exit(EXIT_FAILURE);
   }
@@ -92,7 +97,7 @@ int do_accept(int sock, struct sockaddr_in sock_addr) {
 
 int createSocket(struct sockaddr_in * sockDsmAddr) {
     int sockDsm = do_socket();
-    sockDsmAddr = init_serv_addr();
+    init_serv_addr(sockDsmAddr);
     do_bind(sockDsm, sockDsmAddr);
     do_listen(sockDsm);
     return sockDsm;

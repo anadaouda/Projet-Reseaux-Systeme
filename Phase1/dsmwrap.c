@@ -23,7 +23,7 @@ int main(int argc, char **argv)
     char * newargv[nbArgs-1];
     struct addrinfo * dsmInfo = get_addr_info(argv[1]);
     int sock = do_connect(dsmInfo);
-    
+
    /* processus intermediaire pour "nettoyer" */
    /* la liste des arguments qu'on va passer */
    /* a la commande a executer vraiment */
