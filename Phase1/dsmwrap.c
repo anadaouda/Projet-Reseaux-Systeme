@@ -16,7 +16,6 @@ int main(int argc, char **argv)
     //argv = {path_to_dsmwrap, hostname, port, path_to_truc, arg1, args2, arg3, NULL};
     //argc est censé etre égal a 7;
 
-
     int nbArgs;
     for (nbArgs = 0; argv[nbArgs] != NULL; nbArgs++);
     
@@ -64,8 +63,7 @@ int main(int argc, char **argv)
    }
 
    free(procName);
-   
-
+   free(proc_array);
    /* Envoi du pid au lanceur */
 
    /* Creation de la socket d'ecoute pour les */
@@ -79,9 +77,9 @@ int main(int argc, char **argv)
    
    /* on execute la bonne commande */
    createNewArgv(newargv, argv, nbArgs-3);
-   execvp(newargv[0],newargv);
-   
    close(sock);
    close(sockEcoute);
+   execvp(newargv[0],newargv);
+
    return 0;
 }

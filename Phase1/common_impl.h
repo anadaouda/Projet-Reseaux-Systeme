@@ -43,6 +43,15 @@ struct dsm_proc {
 };
 typedef struct dsm_proc dsm_proc_t;
 
+
+struct pipeReadArgs {
+    int ** newStderr;
+    int ** newStdout;
+    char ** machines;
+    int nbProcs;
+};
+typedef struct pipeReadArgs pipeReadArgs_t;
+
 int creer_socket(int type, int *port_num);
 int nbMachines(char * path);
 void nomMachines(char * path, char ** text);

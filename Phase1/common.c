@@ -1,18 +1,6 @@
 #include "common_impl.h"
 
 
-int creer_socket(int prop, int *port_num)
-{
-   int fd = 0;
-
-   /* fonction de creation et d'attachement */
-   /* d'une nouvelle socket */
-   /* renvoie le numero de descripteur */
-   /* et modifie le parametre port_num */
-
-   return fd;
-}
-
 int randInt(int min, int max) {
     int result = (rand() % (max - min)) + min;
     return result;
@@ -51,7 +39,7 @@ struct addrinfo * get_addr_info(char * hostname, int port) {
     hints.ai_family = AF_INET;
     hints.ai_socktype=SOCK_STREAM;
 
-		char * portChar = malloc(sizeof(int) + 1);
+		char portChar[7];
 		sprintf(portChar, "%i", ntohs(port));
     if ((status = getaddrinfo(hostname,portChar,&hints,&res)) == -1) {
         perror("Getaddrinfo");
@@ -64,13 +52,13 @@ struct addrinfo * get_addr_info(char * hostname, int port) {
 int do_connect(struct addrinfo * res) {
     struct addrinfo * p;
     int sock = do_socket();
-    int resSize = 0;
     for (p = res; p !=NULL; p = p->ai_next) {
         if(connect(sock, p->ai_addr, p->ai_addrlen) !=-1) {
             return sock;
         }
     }
     perror("Connect");
+    free(res);
     return -1;
 }
 
@@ -153,7 +141,7 @@ void nomMachines(char * path, char ** text) {
       wordCount++;
   }
   fclose(file);
-
+  free(str);
   return;
 }
 
@@ -233,6 +221,7 @@ void printProcArray(dsm_proc_t * proc_array, int num_procs) {
 	}
 	fflush(stdout);
 }
+
 /* Vous pouvez ecrire ici toutes les fonctions */
 /* qui pourraient etre utilisees par le lanceur */
 /* et le processus intermediaire. N'oubliez pas */

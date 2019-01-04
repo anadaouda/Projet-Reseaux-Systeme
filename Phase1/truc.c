@@ -6,6 +6,7 @@
 
 int main(int argc, char *argv[])
 {
+  /*
    int fd;
    int i;
    char str[1024];
@@ -26,6 +27,10 @@ int main(int argc, char *argv[])
 
    fflush(stdout);
    fflush(stderr);
-   
+   */
+
+    fprintf(stdout,"done");
+    fflush(stdout);
+
    return 0;
 }
