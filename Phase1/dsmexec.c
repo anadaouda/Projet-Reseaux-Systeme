@@ -65,13 +65,18 @@ void usage(void) {
   exit(EXIT_FAILURE);
 }
 
-void freeEverything() {
+void freeEverything(char * buffer, dsm_proc_t * proc_array, char * machines[], int ** newStderr, int **newStdout, int sock) {
   for (int i = 0; i < procsCreated; i++) {
 			free(machines[i]);
+      free(newStdout[i]);
+      free(newStderr[i]);
+      close((proc_array + i)->connect_info.comSock);
 		}
+    close(sock);
     free(newStderr);
     free(newStdout);
     free(proc_array);
+    free(buffer);
 }
 // Traintant de signal des zombies
 void sigchld_handler(int sig) {
@@ -192,9 +197,10 @@ int main(int argc, char *argv[]) {
 
      break;
 	} else  if (pid > 0) { /* pere */
+  /* fermeture des extremites des tubes non utiles */
     close(newStderr[i][1]);
     close(newStdout[i][1]);
-	   /* fermeture des extremites des tubes non utiles */
+
 	   procsCreated++;
 	  }
   }
@@ -207,7 +213,6 @@ for(int i = 0; i < argc + 4; i++) {
 pthread_t pipeRd;
 pipeReadArgs_t args = {newStderr, newStdout, machines, nbProcs};
 pthread_create(&pipeRd, NULL, pipeRead, (void *)&args);
-
 
 char * buffer = malloc(MAX_BUFFER_SIZE);
 dsm_proc_t *proc_array = malloc(sizeof(dsm_proc_t)*procsCreated);
@@ -271,8 +276,7 @@ for (int i = 0; i < procsCreated; i++) {
     pthread_join(pipeRd, NULL);
 		int waitPid;
 		while ((waitPid = wait(NULL)) > 0);
-    free(buffer);
-		freeEverything();
+		freeEverything(buffer, proc_array, machines, newStderr, newStdout, sock);
 
   }
 
