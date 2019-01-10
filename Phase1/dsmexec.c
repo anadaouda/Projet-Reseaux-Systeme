@@ -239,7 +239,7 @@ for(i = 0; i < procsCreated ; i++){
 }
 
 // Affichage des données du tableau proc_array
-printProcArray(proc_array, procsCreated);
+//printProcArray(proc_array, procsCreated);
 
 memset(buffer, '\0', MAX_BUFFER_SIZE);
 

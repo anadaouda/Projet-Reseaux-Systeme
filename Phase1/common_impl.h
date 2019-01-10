@@ -18,7 +18,6 @@
 
 /* autres includes (eventuellement) */
 
-
 #define MAX_BUFFER_SIZE 500
 #define MAX_HOSTNAME 100
 
@@ -51,6 +50,16 @@ struct pipeReadArgs {
     int nbProcs;
 };
 typedef struct pipeReadArgs pipeReadArgs_t;
+
+
+struct interProcesCoArgs {
+  int sock;
+  int rank;
+  struct sockaddr_in sockAddr;
+  int num_procs;
+  dsm_proc_t * proc_array;
+};
+typedef struct interProcesCoArgs interProcessCoArgs_t;
 
 int creer_socket(int type, int *port_num);
 int nbMachines(char * path);

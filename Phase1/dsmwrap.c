@@ -2,13 +2,58 @@
 
 void createNewArgv(char * newargv[], char ** argv, int argc) {
     int i;
+
     for (i = 0; i < argc-1; i++){
         newargv[i] = malloc(strlen(argv[i+4])+1);
         strcpy(newargv[i],argv[i+4]);
     }
+
     newargv[argc-1] = NULL;
 }
 
+
+int procIndex(dsm_proc_t * proc_array, int rank, int num_procs) {
+
+    for(int i = 0; i < num_procs; i++) {
+
+        if (proc_array[i].connect_info.rank == rank) {
+            return i;
+        }
+
+    }
+
+    return -1;
+}
+
+void * interProcessCo(void * args) {
+    // Chaque processus va accepter les connexions des processus de rang inferieur
+    interProcessCoArgs_t arguments = *(interProcessCoArgs_t *)args;
+    int sock = arguments.sock;
+    int rank = arguments.rank;
+    int num_procs = arguments.num_procs;
+    dsm_proc_t * proc_array = arguments.proc_array;
+
+    struct sockaddr_in sockAddr;
+    char * processRank = malloc(3);
+    
+    for (int i = rank + 1; i < num_procs; i++) {
+        int acceptSock = do_accept(sock, sockAddr);
+
+        do_receive(acceptSock,processRank);
+        
+        int index = procIndex(proc_array, atoi(processRank), num_procs);
+
+        proc_array[index].connect_info.comSock = acceptSock;
+
+        perror("accept");
+        printf("Processus %i a recu la connexion de %i\n", rank, atoi(processRank));
+        fflush(stdout);
+    }
+
+    free(processRank);
+
+    return NULL;
+}
 
 
 int main(int argc, char **argv)
@@ -16,70 +61,87 @@ int main(int argc, char **argv)
     //argv = {path_to_dsmwrap, hostname, port, path_to_truc, arg1, args2, arg3, NULL};
     //argc est censé etre égal a 7;
 
-    int nbArgs;
+    int nbArgs, rank, portEcoute, sock, sockEcoute, num_proc, procPid, procRank, comSock, procPort;
     for (nbArgs = 0; argv[nbArgs] != NULL; nbArgs++);
-    
+
+    struct addrinfo * dsmInfo = NULL;
+    struct sockaddr_in sockEcouteAddr;
+
+    dsm_proc_t *proc_array = NULL;
+    pthread_t interProcessCoThread;
+    interProcessCoArgs_t args;
+
     char * newargv[nbArgs-2];
 
-    struct addrinfo * dsmInfo = get_addr_info(argv[1], atoi(argv[2]));
-    int sock = do_connect(dsmInfo);
+    char * buffer = malloc(MAX_BUFFER_SIZE);
+    char * hostname = malloc(MAX_HOSTNAME);
+    char * procName = malloc(MAX_HOSTNAME);
 
-   /* processus intermediaire pour "nettoyer" */
-   /* la liste des arguments qu'on va passer */
-   /* a la commande a executer vraiment */
+    dsmInfo = get_addr_info(argv[1], atoi(argv[2]));
+    sock = do_connect(dsmInfo);
 
-   // Il faut les infos de la socket pour que ca marche
-   /* creation d'une socket pour se connecter au */
-   /* au lanceur et envoyer/recevoir les infos */
-   /* necessaires pour la phase dsm_init */
+   /* Envoi des informations au lanceur */
+   gethostname(hostname, MAX_HOSTNAME); // nom d'hote
+   rank = atoi(argv[3]);
+   sockEcoute = createSocket(&sockEcouteAddr, &portEcoute);
 
-   /* Envoi du nom de machine au lanceur */
-   char * buffer = malloc(MAX_BUFFER_SIZE);
-   char * hostname = malloc(MAX_HOSTNAME);
-   gethostname(hostname, MAX_HOSTNAME);
-
-   struct sockaddr_in sockEcouteAddr;
-   int portEcoute;
-   int sockEcoute = createSocket(&sockEcouteAddr, &portEcoute);
-
-   sprintf(buffer, "%s %i %i %i", argv[1],atoi(argv[3]), portEcoute, getpid());
-   
-
+   sprintf(buffer, "%s %i %i %i", argv[1],rank, portEcoute, getpid());
    do_send(buffer, sock);
-   do_receive(sock,buffer);
 
-   int num_proc;
+   /* Reception du nombre de processus */
+   do_receive(sock,buffer);
    sscanf(buffer, "%i", &num_proc);
-   dsm_proc_t *proc_array = malloc(sizeof(dsm_proc_t)*num_proc);
-   
-   int procPid, procRank, comSock, procPort;
-   char * procName = malloc(MAX_HOSTNAME);
+
+   /* Reception des informations des autres processus */
+   proc_array = malloc(sizeof(dsm_proc_t)*num_proc);
 
    for(int i = 0; i < num_proc; i++) {
+
        do_receive(sock,buffer);
        sscanf(buffer, "%s %i %i %i %i", procName,&procPid,&procRank,&comSock,&procPort);
+
        dsm_proc_t newProc = {hostname, procPid, {procRank, comSock, procPort}};
        *(proc_array + i) = newProc;
    }
+   //printProcArray(proc_array, num_proc);
+
+/* Connexion inter-processus */
+    /* Initialisation des variables */
+
+   args.sock = sockEcoute;
+   args.rank = rank;
+   args.num_procs = num_proc;
+   args.sockAddr = sockEcouteAddr;
+   
+
+   /* Creation du thread */
+   pthread_create(&interProcessCoThread, NULL, interProcessCo, (void *)&args);
+
+   /* Connexion aux autres processus */
+    //Chaque processus va se connecter aux processus de rang supérieur
+    
+    char * rankStr = malloc(10);
+
+   for (int i = 0; i < rank; i++) {
+       int index = procIndex(proc_array, i, num_proc);
+
+       sprintf(rankStr, "%i", rank);
+
+       dsmInfo = get_addr_info(proc_array[i].name, proc_array[i].connect_info.port);
+       proc_array[index].connect_info.comSock = do_connect(dsmInfo);
+       do_send(rankStr, proc_array[index].connect_info.comSock);
+
+   }
+
+    free(rankStr);
+   pthread_join(interProcessCoThread, NULL);
+
 
    free(procName);
    free(proc_array);
-   /* Envoi du pid au lanceur */
-
-   /* Creation de la socket d'ecoute pour les */
-   /* connexions avec les autres processus dsm */
-
-   /* Envoi du numero de port au lanceur */
-   /* pour qu'il le propage à tous les autres */
-   /* processus dsm */
-
-
-   
-   /* on execute la bonne commande */
    createNewArgv(newargv, argv, nbArgs-3);
    close(sock);
    close(sockEcoute);
    execvp(newargv[0],newargv);
-
    return 0;
 }
