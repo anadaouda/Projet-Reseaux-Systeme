@@ -33,7 +33,7 @@ struct dsm_proc_conn  {
    int rank;
    int comSock;
    int port;
-   /* a completer */
+
 };
 typedef struct dsm_proc_conn dsm_proc_conn_t;
 
@@ -46,7 +46,7 @@ struct dsm_proc {
 };
 typedef struct dsm_proc dsm_proc_t;
 
-
+// arguments du thread d'ecoute des tubes de redirection
 struct pipeReadArgs {
     int ** newStderr;
     int ** newStdout;
@@ -55,7 +55,7 @@ struct pipeReadArgs {
 };
 typedef struct pipeReadArgs pipeReadArgs_t;
 
-
+// arguments du thread d'acceptation des connexions
 struct interProcesCoArgs {
   int sock;
   int rank;

@@ -221,9 +221,3 @@ void printProcArray(dsm_proc_t * proc_array, int num_procs) {
 	}
 	fflush(stdout);
 }
-
-/* Vous pouvez ecrire ici toutes les fonctions */
-/* qui pourraient etre utilisees par le lanceur */
-/* et le processus intermediaire. N'oubliez pas */
-/* de declarer le prototype de ces nouvelles */
-/* fonctions dans common_impl.h */
