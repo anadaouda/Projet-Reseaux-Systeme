@@ -192,7 +192,7 @@ void do_receive(int sock, char * buffer) {
 }
 
 void addProc (dsm_proc_t * p_dsmProc, int index, int dsmProcSize, char * hostname, int pid, int rank, int comSock, int port) {
-	if (index < dsmProcSize) {
+  if (index < dsmProcSize) {
 		dsm_proc_t newProc = {hostname, pid, {rank, comSock, port}};
 		*(p_dsmProc + index) = newProc;
 	}

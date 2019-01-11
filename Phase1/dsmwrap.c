@@ -14,11 +14,8 @@ void createNewArgv(char * newargv[], char ** argv, int argc) {
 
 int procIndex(dsm_proc_t * proc_array, int rank, int num_procs) {
 
-printf("hi %i\n", rank);
-            fflush(stdout);
     for(int i = 0; i < num_procs; i++) {
-
-        if (proc_array[i].connect_info.rank == rank) {
+        if ((proc_array + i)->connect_info.rank == rank) {
             return i;
         }
 
@@ -37,20 +34,24 @@ void * interProcessCo(void * args) {
 
     struct sockaddr_in sockAddr;
     char * processRank = malloc(MAX_BUFFER_SIZE);
-    
-    for (int i = rank + 1; i < num_procs; i++) {
 
+    for (int i = rank + 1; i < num_procs; i++) {
         int acceptSock = do_accept(sock, sockAddr);
 
         do_receive(acceptSock,processRank);
 
         int index = procIndex(proc_array, atoi(processRank), num_procs);
-perror("accept");
-printf("booojouruurur \n");
-        fflush(stdout);
-        (proc_array + index)->connect_info.comSock = acceptSock;
 
-        printf("Processus %i a recu la connexion de %i\n", rank, atoi(processRank));
+        addProc(proc_array,
+                index, 
+                num_procs,
+                (proc_array + index)->name,
+                (proc_array + index)->pid,
+                i,
+                acceptSock,
+                (proc_array + index)->connect_info.port);
+
+        printf("A recu la connexion du processus %i \n", atoi(processRank));
         fflush(stdout);
     }
 
@@ -80,6 +81,7 @@ int main(int argc, char **argv)
     char * buffer = malloc(MAX_BUFFER_SIZE);
     char * hostname = malloc(MAX_HOSTNAME);
     char * procName = malloc(MAX_HOSTNAME);
+    char * rankStr = malloc(MAX_BUFFER_SIZE);
 
     dsmInfo = get_addr_info(argv[1], atoi(argv[2]));
     sock = do_connect(dsmInfo);
@@ -116,6 +118,7 @@ int main(int argc, char **argv)
    args.rank = rank;
    args.num_procs = num_proc;
    args.sockAddr = sockEcouteAddr;
+   args.proc_array = proc_array;
    
 
    /* Creation du thread */
@@ -124,7 +127,7 @@ int main(int argc, char **argv)
    /* Connexion aux autres processus */
     //Chaque processus va se connecter aux processus de rang supérieur
     
-    char * rankStr = malloc(MAX_BUFFER_SIZE);
+    
 
    for (int i = 0; i < rank; i++) {
        int index = procIndex(proc_array, i, num_proc);
@@ -132,20 +135,37 @@ int main(int argc, char **argv)
        sprintf(rankStr, "%i", rank);
        
        dsmInfo = get_addr_info(proc_array[i].name, proc_array[i].connect_info.port);
+       
        proc_array[index].connect_info.comSock = do_connect(dsmInfo);
        do_send(rankStr, proc_array[index].connect_info.comSock);
 
+       printf("S'est connecte au processus %i \n", i);
+       fflush(stdout);
    }
    
-   free(rankStr);
    pthread_join(interProcessCoThread, NULL);
 
 
+/*
+for (int i = 0; i < num_proc; i++) {
+    printf("%i ", (proc_array + i)->connect_info.comSock);
+    fflush(stdout);
+    close((proc_array + i)->connect_info.comSock);
+}
+*/
+
+printf("\n%i %i", sock, sockEcoute);
+fflush(stdout);
+
+//close((proc_array)->connect_info.comSock);
+close(sock);
+   close(sockEcoute);
+
+    free(rankStr);
    free(procName);
    free(proc_array);
+
    createNewArgv(newargv, argv, nbArgs-3);
-   close(sock);
-   close(sockEcoute);
    execvp(newargv[0],newargv);
    return 0;
 }
