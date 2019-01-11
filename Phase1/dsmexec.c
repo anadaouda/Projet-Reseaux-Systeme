@@ -40,7 +40,7 @@ void * pipeRead(void * args) {
             if(pollStd[j].revents == POLLIN) {
                 memset(buffer, '\0', MAX_BUFFER_SIZE);
                 read(pollStd[j].fd, buffer, MAX_BUFFER_SIZE);
-								
+
                 if (j >= nbProcs) {
                     printf("[Proc %i : %s : %s] %s\n", j-nbProcs, machines[j-nbProcs], "stderr", buffer);
 										fflush(stdout);
@@ -104,7 +104,7 @@ void createNewArgv(char * newArgv[], char * argv [], int argc, int dsmExecPort) 
 		char sshCommand[] = "dsmwrap";
 
 		getcwd(pwd, 100);
-		
+
 		newArgv[0] = malloc(strlen(execCommand)+1);
 		newArgv[1] = malloc(MAX_HOSTNAME);
 		newArgv[2] = malloc(strlen(pwd) + strlen(sshCommand) + 6); // 6 correspond a la taille de /bin/ + 1 pour \0
@@ -148,30 +148,30 @@ int main(int argc, char *argv[]) {
 
 		 nbProcs = nbMachines(argv[1]); // recuperation du nombre de processus a lancer
 
-		 
+
 		 int ** newStderr = malloc(nbProcs*sizeof(int *)); // tubes de redirection de la sortie d'erreur
 		 int ** newStdout = malloc(nbProcs*sizeof(int *)); // tubes de redirection de la sortie standard
      nomMachines(argv[1], machines); // recuperation des noms de machines
 
      sock = createSocket(&sockAddr, &port); // socket d'ecoute
-     
+
 		 // Mise en place du traitant de signal
      memset(&action, 0, sizeof(struct sigaction));
      action.sa_handler = sigchld_handler;
      sigaction(SIGCHLD, &action, NULL);
-		 
+
      createNewArgv(newArgv, argv, argc, port);
 		 /*
 		 argv = {dsmexec, machine_file, programmeALancer, argumentsDuProgramme..., NULL}
 		 newArgv = {ssh, nomMachine, dsmwrap, nomHote, portDsmExec, rang, programmeALancer, argumentsDuProgramme..., NULL}
 		 => newArgc = argc + 5
 		 */
-  
+
      for(int i = 0; i < nbProcs ; i++) {
 			 pid_t pid;
 			 newStderr[i] = malloc(2*sizeof(int));
 			 newStdout[i] = malloc(2*sizeof(int));
-			 
+
 			 pipe(newStderr[i]);
 			 pipe(newStdout[i]);
 
@@ -191,7 +191,8 @@ int main(int argc, char *argv[]) {
      close(newStderr[i][1]);
      close(newStderr[i][0]);
 
-     closeUselessFd(newStderr, newStdout, i, nbProcs);
+     closeUselessFd
+     (newStderr, newStdout, i, nbProcs);
      updateNewargv(newArgv,machines,i);
 		 execvp("ssh",newArgv);
 
@@ -225,8 +226,8 @@ for(i = 0; i < procsCreated ; i++){
 	do_receive(acceptSock, buffer);
 
 	int procport, procPid, procRank;
-  char name[MAX_HOSTNAME];
 
+  char * name = malloc(MAX_HOSTNAME);
 	sscanf(buffer, "%s %i %i %i", name, &procRank, &procport, &procPid);
 
 	dsm_proc_t newProc = {name, procPid, {procRank, acceptSock, procport}};
@@ -237,6 +238,8 @@ for(i = 0; i < procsCreated ; i++){
   // Envoie du nombre de processus dsm
 	do_send(buffer, acceptSock);
 }
+printf("!bonjour");
+printProcArray(proc_array, procsCreated);
 
 // Affichage des données du tableau proc_array
 //printProcArray(proc_array, procsCreated);
@@ -272,10 +275,13 @@ for (int i = 0; i < procsCreated; i++) {
      /* on ferme les descripteurs proprement */
 
      /* on ferme la socket d'ecoute */
-    
+
     pthread_join(pipeRd, NULL);
 		int waitPid;
-		while ((waitPid = wait(NULL)) > 0);
+		while ((waitPid = wait(NULL)) > 0) {
+      printf("bye\n");
+      fflush(stdout);
+    }
 		freeEverything(buffer, proc_array, machines, newStderr, newStdout, sock);
 
   }

@@ -91,7 +91,7 @@ int createSocket(struct sockaddr_in * sockDsmAddr, int *port) {
 		do {
 			int randPort = randInt(1024, 65535);
 			init_serv_addr(sockDsmAddr, randPort);
-		} while ( bind(sockDsm, (struct sockaddr *) sockDsmAddr, sizeof(struct sockaddr_in)) == -1);
+		} while (bind(sockDsm, (struct sockaddr *) sockDsmAddr, sizeof(struct sockaddr_in)) == -1);
     do_listen(sockDsm);
     *port = sockDsmAddr->sin_port;
     return sockDsm;
@@ -210,7 +210,7 @@ void printArgs (char* args[], int nbArgs) {
 
 void printProcArray(dsm_proc_t * proc_array, int num_procs) {
 	int i;
-	
+
 	for( i = 0; i < num_procs; i++) {
 		printf("%s :\n- pid %i\n- rank %i\n- comSock %i\n- port %i\n\n",
 		(proc_array + i)->name,

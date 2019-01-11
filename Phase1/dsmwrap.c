@@ -35,11 +35,9 @@ void * interProcessCo(void * args) {
     struct sockaddr_in sockAddr;
     char * processRank = malloc(MAX_BUFFER_SIZE);
 
-    
+
     for (int i = rank + 1; i < num_procs; i++) {
         int acceptSock = do_accept(sock, sockAddr);
-        printf("ACCEPT");
-        fflush(stdout);
 
         do_receive(acceptSock,processRank);
 
@@ -83,7 +81,6 @@ int main(int argc, char **argv)
 
     char * buffer = malloc(MAX_BUFFER_SIZE);
     char * hostname = malloc(MAX_HOSTNAME);
-    char * procName = malloc(MAX_HOSTNAME);
     char * rankStr = malloc(MAX_BUFFER_SIZE);
 
     dsmInfo = get_addr_info(argv[1], atoi(argv[2]));
@@ -94,7 +91,7 @@ int main(int argc, char **argv)
    rank = atoi(argv[3]);
    sockEcoute = createSocket(&sockEcouteAddr, &portEcoute);
 
-   sprintf(buffer, "%s %i %i %i", argv[1],rank, portEcoute, getpid());
+   sprintf(buffer, "%s %i %i %i", hostname, rank, portEcoute, getpid());
    do_send(buffer, sock);
 
    /* Reception du nombre de processus */
@@ -105,14 +102,14 @@ int main(int argc, char **argv)
    proc_array = malloc(sizeof(dsm_proc_t)*num_proc);
 
    for(int i = 0; i < num_proc; i++) {
-
+     char * procName = malloc(MAX_HOSTNAME);
        do_receive(sock,buffer);
        sscanf(buffer, "%s %i %i %i %i", procName,&procPid,&procRank,&comSock,&procPort);
 
-       dsm_proc_t newProc = {hostname, procPid, {procRank, comSock, procPort}};
+       dsm_proc_t newProc = {procName, procPid, {procRank, comSock, procPort}};
        *(proc_array + i) = newProc;
    }
-   //printProcArray(proc_array, num_proc);
+   printProcArray(proc_array, num_proc);
 
 /* Connexion inter-processus */
     /* Initialisation des variables */
@@ -132,10 +129,11 @@ int main(int argc, char **argv)
 
    for (int i = 0; i < rank; i++) {
        int index = procIndex(proc_array, i, num_proc);
-
        sprintf(rankStr, "%i", rank);
 
-       dsmInfo = get_addr_info(proc_array[i].name, proc_array[i].connect_info.port);
+       //memset();
+       dsmInfo = get_addr_info(proc_array[index].name, proc_array[index].connect_info.port);
+       printf("Je veux me connecter à : %s\n", proc_array[index].name);
 
        if ((proc_array[index].connect_info.comSock = do_connect(dsmInfo)) == -1) {
          fprintf(stderr, "N'a pas pu se connecter au processus %i \n", i);
@@ -159,12 +157,10 @@ for (int i = 0; i < num_proc; i++) {
 }
 */
 
-//close((proc_array)->connect_info.comSock);
 close(sock);
    close(sockEcoute);
 
     free(rankStr);
-   free(procName);
    free(proc_array);
 
    createNewArgv(newargv, argv, nbArgs-3);
