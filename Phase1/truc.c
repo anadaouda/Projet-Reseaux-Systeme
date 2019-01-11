@@ -6,7 +6,7 @@
 
 int main(int argc, char *argv[])
 {
-  /*
+/*
    int fd;
    int i;
    char str[1024];

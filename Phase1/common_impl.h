@@ -1,3 +1,5 @@
+#define _XOPEN_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -15,6 +17,7 @@
 #include <pthread.h>
 #include <poll.h>
 #include <sys/mman.h>
+#include <signal.h>
 
 /* autres includes (eventuellement) */
 

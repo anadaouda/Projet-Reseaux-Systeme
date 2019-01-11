@@ -35,15 +35,18 @@ void * interProcessCo(void * args) {
     struct sockaddr_in sockAddr;
     char * processRank = malloc(MAX_BUFFER_SIZE);
 
+    
     for (int i = rank + 1; i < num_procs; i++) {
         int acceptSock = do_accept(sock, sockAddr);
+        printf("ACCEPT");
+        fflush(stdout);
 
         do_receive(acceptSock,processRank);
 
         int index = procIndex(proc_array, atoi(processRank), num_procs);
 
         addProc(proc_array,
-                index, 
+                index,
                 num_procs,
                 (proc_array + index)->name,
                 (proc_array + index)->pid,
@@ -119,30 +122,32 @@ int main(int argc, char **argv)
    args.num_procs = num_proc;
    args.sockAddr = sockEcouteAddr;
    args.proc_array = proc_array;
-   
+
 
    /* Creation du thread */
    pthread_create(&interProcessCoThread, NULL, interProcessCo, (void *)&args);
 
    /* Connexion aux autres processus */
     //Chaque processus va se connecter aux processus de rang supérieur
-    
-    
 
    for (int i = 0; i < rank; i++) {
        int index = procIndex(proc_array, i, num_proc);
 
        sprintf(rankStr, "%i", rank);
-       
-       dsmInfo = get_addr_info(proc_array[i].name, proc_array[i].connect_info.port);
-       
-       proc_array[index].connect_info.comSock = do_connect(dsmInfo);
-       do_send(rankStr, proc_array[index].connect_info.comSock);
 
-       printf("S'est connecte au processus %i \n", i);
-       fflush(stdout);
+       dsmInfo = get_addr_info(proc_array[i].name, proc_array[i].connect_info.port);
+
+       if ((proc_array[index].connect_info.comSock = do_connect(dsmInfo)) == -1) {
+         fprintf(stderr, "N'a pas pu se connecter au processus %i \n", i);
+         fflush(stderr);
+       } else {
+         printf("S'est connecte au processus %i \n", i);
+         fflush(stdout);
+         do_send(rankStr, proc_array[index].connect_info.comSock);
+       }
+
    }
-   
+
    pthread_join(interProcessCoThread, NULL);
 
 
@@ -153,9 +158,6 @@ for (int i = 0; i < num_proc; i++) {
     close((proc_array + i)->connect_info.comSock);
 }
 */
-
-printf("\n%i %i", sock, sockEcoute);
-fflush(stdout);
 
 //close((proc_array)->connect_info.comSock);
 close(sock);
